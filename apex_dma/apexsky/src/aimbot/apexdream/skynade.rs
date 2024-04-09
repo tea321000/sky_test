@@ -19,11 +19,11 @@ pub fn skynade_angle(
             (false, WEAP_ID_FRAG_GRENADE) => (true, &pitches::GRENADE_PITCHES, 70.0),
             (false, WEAP_ID_ARC_STAR) => (false, &pitches::ARC_PITCHES, 25.0),
             (true, WEAP_ID_THERMITE_GRENADE) => (false, &pitches::GRENADIER_GRENADE_PITCHES, 0.0),
-            (true, WEAP_ID_FRAG_GRENADE) => (true, &pitches::GRENADIER_GRENADE_PITCHES, 70.0),
-            (true, WEAP_ID_ARC_STAR) => (true, &pitches::GRENADIER_ARC_PITCHES, 25.0),
+            (true, WEAP_ID_FRAG_GRENADE) => (false, &pitches::GRENADIER_GRENADE_PITCHES, 70.0),
+            (true, WEAP_ID_ARC_STAR) => (false, &pitches::GRENADIER_ARC_PITCHES, 25.0),
             _ => return Default::default(),
         };
-    // println!("weap={},z={}", weapon_id, z_offset);
+   //  println!("weap={},z={}", weapon_id, z_offset);
 
     let g = 750.0 * weapon_projectile_scale;
     let v0 = weapon_projectile_speed;
