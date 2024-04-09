@@ -4,6 +4,7 @@
 #include "prediction.h"
 #include "vector.h"
 #include <array>
+#include "offsets.h"
 #include <cassert>
 #include <chrono>
 #include <cmath>
