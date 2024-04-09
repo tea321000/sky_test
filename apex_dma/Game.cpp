@@ -14,6 +14,15 @@
 #include <ostream>
 #include <thread>
 
+enum eTargetGrade
+{
+    CHAMPION = (1 << 0),
+    CHAMP_KILLLEADER = (1 << 1),
+    KILLLEADER = (1 << 2),
+    JUMPMASTER = (1 << 3),
+    EXP_LEADER = (1 << 4)
+};
+
 extern Memory apex_mem;
 extern const exported_offsets_t offsets;
 
@@ -182,7 +191,7 @@ float Entity::GetYaw() {
 }
 
 bool Entity::isGlowing() {
-  return *(uint8_t *)(buffer + OFFSET_GLOW_CONTEXT_ID) == 7;
+  return *(uint8_t *)(buffer + OFFSET_GLOW_HIGHLIGHT_ID) == 7;
 }
 
 bool Entity::isZooming() {
@@ -195,15 +204,14 @@ extern uint64_t g_Base;
 void Entity::enableGlow(int setting_index, uint8_t inside_value,
                         uint8_t outline_size,
                         std::array<float, 3> highlight_color) {
+  
 
   const unsigned char outsidevalue = 125;
 
   HighlightSetting_t highlight_settings;
   highlight_settings.inner_function = inside_value; // InsideFunction
-  highlight_settings.outside_function =
-      outsidevalue; // OutlineFunction: HIGHLIGHT_OUTLINE_OBJECTIVE
-  highlight_settings.outside_radius =
-      outline_size; // OutlineRadius: size * 255 / 8
+  highlight_settings.outside_function = outsidevalue; // OutlineFunction: HIGHLIGHT_OUTLINE_OBJECTIVE
+  highlight_settings.outside_radius = outline_size; // OutlineRadius: size * 255 / 8
   highlight_settings.state = 0;
   highlight_settings.shouldDraw = 1;
   highlight_settings.postProcess = 0;
@@ -211,24 +219,30 @@ void Entity::enableGlow(int setting_index, uint8_t inside_value,
   highlight_settings.color1[1] = highlight_color[1];
   highlight_settings.color1[2] = highlight_color[2];
 
+  
   uint8_t context_id = setting_index;
-  apex_mem.Write<uint8_t>(ptr + OFFSET_GLOW_CONTEXT_ID, context_id);
-  apex_mem.Write<int>(ptr + GLOW_VISIBLE_TYPE, 2);
-
+  apex_mem.Write<uint8_t>(ptr + OFFSET_GLOW_HIGHLIGHT_ID, context_id);
   long highlight_settings_ptr;
   apex_mem.Read<long>(g_Base + HIGHLIGHT_SETTINGS, highlight_settings_ptr);
-  apex_mem.Write<HighlightSetting_t>(highlight_settings_ptr + 0x34 * context_id,
-                                     highlight_settings);
+  apex_mem.Write<int>(ptr + OFFSET_GLOW_ENABLE, 1);
+  apex_mem.Write<int>(ptr + OFFSET_GLOW_THROUGH_WALLS, 2);
+  apex_mem.Write<int>(g_Base + OFFSET_GLOW_FIX, 2);
+  apex_mem.Write<float>(ptr + OFFSET_GLOW_DISTANCE, 8.0E+4);
 
-  apex_mem.Write<float>(ptr + 0x264, 8.0E+4);
+  //apex_mem.Write<typeof(HighlightSetting_t)>(highlight_settings_ptr + 0x34 * context_id + 0x0,highlight_settings);
+  apex_mem.Write<typeof(HighlightSetting_t)>(highlight_settings_ptr + (OFFSET_HIGHLIGHTSIZE * context_id) + 0, highlight_settings);
 
-  apex_mem.Write(g_Base + OFFSET_GLOW_FIX, 1);
+
+  //尝试添加击杀王
+
+
+
 }
 
 void Entity::disableGlow() {
-  uint8_t context_id = *(uint8_t *)(this->buffer + OFFSET_GLOW_CONTEXT_ID);
+  uint8_t context_id = *(uint8_t *)(this->buffer + OFFSET_GLOW_HIGHLIGHT_ID);
   if (context_id >= 80 && context_id < 100) {
-    apex_mem.Write<uint8_t>(this->ptr + OFFSET_GLOW_CONTEXT_ID, 0);
+    apex_mem.Write<uint8_t>(this->ptr + OFFSET_GLOW_HIGHLIGHT_ID, 0);
   }
 }
 
@@ -266,21 +280,24 @@ void Entity::glow_weapon_model(bool enable_glow, bool enable_draw,
   apex_mem.Read<uint64_t>(ptr + offsets.cplayer_viewmodels, view_model_handle);
   view_model_handle &= 0xFFFF;
   uint64_t view_model_ptr = 0;
-  apex_mem.Read<uint64_t>(
-      g_Base + offsets.entitylist + (view_model_handle << 5), view_model_ptr);
+  apex_mem.Read<uint64_t>(g_Base + offsets.entitylist + (view_model_handle << 5), view_model_ptr);
+  
 
-  // printf("view model handle=%lu, ptr=%lu, \n", view_model_handle,
-  // view_model_ptr);
+/*
+   printf("view model handle=%lu, ptr=%lu, \n", view_model_handle, view_model_ptr);
+  
 
-  // uint64_t name_ptr;
-  // char name_str[200];
-  // apex_mem.Read<uint64_t>(view_model_ptr + offsets.offset_centity_modelname,
-  // name_ptr); apex_mem.ReadArray<char>(name_ptr, name_str, 200);
-  // printf("name=%s\n", name_str);
+   uint64_t name_ptr;
+   char name_str[200];
+   apex_mem.Read<uint64_t>(view_model_ptr + offsets.centity_modelname, name_ptr); 
+   apex_mem.ReadArray<char>(name_ptr, name_str, 200);
+   printf("name=%s\n", name_str);
+   
+   */
 
   std::array<unsigned char, 4> highlightFunctionBits = {0, 125, 64, 64};
   if (!enable_glow) {
-    apex_mem.Write<uint8_t>(view_model_ptr + OFFSET_GLOW_CONTEXT_ID, 0);
+    apex_mem.Write<uint8_t>(view_model_ptr + OFFSET_GLOW_HIGHLIGHT_ID, 0);
     return;
   }
 
@@ -302,9 +319,8 @@ void Entity::glow_weapon_model(bool enable_glow, bool enable_draw,
   apex_mem.Read<long>(g_Base + HIGHLIGHT_SETTINGS, highlight_settings_ptr);
 
   uint8_t context_id = 99;
-  apex_mem.Write<uint8_t>(view_model_ptr + OFFSET_GLOW_CONTEXT_ID, context_id);
-  apex_mem.Write<HighlightSetting_t>(highlight_settings_ptr + 0x34 * context_id,
-                                     highlight_settings);
+  apex_mem.Write<uint8_t>(view_model_ptr + OFFSET_GLOW_HIGHLIGHT_ID, context_id);
+  apex_mem.Write<HighlightSetting_t>(highlight_settings_ptr + OFFSET_HIGHLIGHTSIZE * context_id + 0, highlight_settings);
 }
 
 LoveStatus Entity::check_love_player() {
@@ -414,9 +430,8 @@ bool Item::isTrap() {
 //   return *(int *)(buffer + OFFSET_ITEM_GLOW) == 1363184265;
 // }
 
-void Item::enableGlow(std::array<unsigned char, 4> highlightFunctionBits,
-                      std::array<float, 3> highlightParameter,
-                      int settingIndex) {
+void Item::enableGlow(std::array<unsigned char, 4> highlightFunctionBits, std::array<float, 3> highlightParameter, int settingIndex) 
+{
   HighlightSetting_t highlight_settings;
   highlight_settings.inner_function =
       highlightFunctionBits[0]; // InsideFunction
@@ -435,9 +450,8 @@ void Item::enableGlow(std::array<unsigned char, 4> highlightFunctionBits,
   apex_mem.Read<long>(g_Base + HIGHLIGHT_SETTINGS, highlight_settings_ptr);
 
   uint8_t context_id = settingIndex;
-  apex_mem.Write<uint8_t>(this->ptr + OFFSET_GLOW_CONTEXT_ID, context_id);
-  apex_mem.Write<HighlightSetting_t>(highlight_settings_ptr + 0x34 * context_id,
-                                     highlight_settings);
+  apex_mem.Write<uint8_t>(this->ptr + OFFSET_GLOW_HIGHLIGHT_ID, context_id);
+  apex_mem.Write<HighlightSetting_t>(highlight_settings_ptr + OFFSET_HIGHLIGHTSIZE * context_id + 0, highlight_settings);
 }
 
 // void Item::disableGlow() {
@@ -684,7 +698,7 @@ void WeaponXEntity::update(uint64_t LocalPlayer) {
 }
 
 float WeaponXEntity::get_projectile_speed() { 
-return ((weap_id == 2) ? projectile_speed + pow(lastChargeLevel, 5.4684388195808) : projectile_speed);
+  return ((weap_id == 2) ? projectile_speed + pow(lastChargeLevel, 5.4684388195808) : projectile_speed);
 }
 
 float WeaponXEntity::get_projectile_gravity() {
