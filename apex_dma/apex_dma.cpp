@@ -559,15 +559,29 @@ void ProcessPlayer(Entity &LPlayer, Entity &target, uint64_t entitylist,
   int local_team = LPlayer.getTeamId();
   // printf("Target Team: %i\n", entity_team);
 
-  if (target.is_player && (!target.isAlive() || !LPlayer.isAlive())) {
-    // Update yew to spec checker
-    tick_yew(target.ptr, target.GetYaw());
-    // Exclude self from list when watching others
-    if (target.ptr != LPlayer.ptr && is_spec(target.ptr)) {
-      tmp_specs.insert(target.ptr);
-    }
+  if (target.is_player && !LPlayer.isAlive())
+  {
     return;
   }
+
+  if (target.is_player && !!target.isAlive() && LPlayer.isAlive() && target.ptr != LPlayer.ptr)
+  {
+    if (target.GetYaw() == LPlayer.GetYaw())
+    {
+      tmp_specs.insert(target.ptr);
+    }  
+    return;
+  }
+
+  // if (target.is_player && (!target.isAlive() || !LPlayer.isAlive())) {
+  //   // Update yew to spec checker
+  //   tick_yew(target.ptr, target.GetYaw());
+  //   // Exclude self from list when watching others
+  //   if (target.ptr != LPlayer.ptr && is_spec(target.ptr)) {
+  //     tmp_specs.insert(target.ptr);
+  //   }
+  //   return;
+  // }
 
   if (g_settings.tdm_toggle) { // Check if the target entity is on the same
                                // team as the
