@@ -564,12 +564,12 @@ void ProcessPlayer(Entity &LPlayer, Entity &target, uint64_t entitylist,
     return;
   }
 
-  if (target.is_player && !!target.isAlive() && LPlayer.isAlive() && target.ptr != LPlayer.ptr)
+  if (target.is_player && !target.isAlive())
   {
-    if (target.GetYaw() == LPlayer.GetYaw())
+    if (LPlayer.isAlive() && target.ptr != LPlayer.ptr && target.GetYaw() == LPlayer.GetYaw())
     {
-      tmp_specs.insert(target.ptr);
-    }  
+      tmp_specs.insert(target.ptr); 
+    }
     return;
   }
 
